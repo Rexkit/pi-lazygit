@@ -1,0 +1,68 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs on the same branch when a newer push arrives.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Build & Lint ────────────────────────────────────────────────────────────
+  # Runs on all non-main branch pushes.
+  build:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+    if: "github.event_name == 'push' && github.ref != 'refs/heads/main'"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  # ─── Semantic Release ────────────────────────────────────────────────────────
+  # Runs only on main and publishes a new npm/GitHub release when conventional
+  # commits warrant one (feat → minor, fix/refactor/perf → patch, BREAKING → major).
+  #
+  # Required secrets (GitHub → Settings → Secrets and variables → Actions):
+  #   GH_TOKEN   – GitHub PAT with `repo` + `write:packages` scopes
+  #   NPM_TOKEN  – npm access token for publishing to npmjs.com
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    if: "github.ref == 'refs/heads/main' && github.event_name == 'push'"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # semantic-release needs the full git history
+          token: ${{ secrets.GH_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Configure git
+        run: |
+          git config user.email "ci@semantic-release"
+          git config user.name "semantic-release"
+          git remote set-url origin "https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git"
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
