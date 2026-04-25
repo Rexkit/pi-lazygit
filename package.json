@@ -1,6 +1,6 @@
 {
   "name": "@rexkit/pi-lazygit",
-  "version": "0.0.0-development",
+  "version": "1.0.0",
   "description": "Pi package that opens Lazygit in a floating overlay window.",
   "license": "MIT",
   "type": "commonjs",
