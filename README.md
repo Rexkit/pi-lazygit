@@ -101,21 +101,6 @@ npm run build
 npm run format
 ```
 
-The Pi package manifest points at `src/index.ts` so Git installs work without committed build output. The CI still builds TypeScript to validate the package and npm releases include both `src/` and `dist/`.
-
-## Release pipeline
-
-The GitHub Actions setup mirrors the neighbouring `ai-review-cli` repository:
-
-- `.github/workflows/ci.yml` runs build/lint on branches and semantic-release on `main`.
-- `.github/workflows/package.yml` runs after a successful release, creates an npm tarball, and uploads it to the GitHub release.
-- `.releaserc.json` uses conventional commits and publishes to npm + GitHub releases.
-
-Required repository secrets:
-
-- `GH_TOKEN` — GitHub PAT with repository/release write access.
-- `NPM_TOKEN` — npm token with publish access to `@rexkit/pi-lazygit`.
-
 ## License
 
 MIT
